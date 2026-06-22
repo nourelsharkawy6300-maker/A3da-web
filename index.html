@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>قعدة سكرول - V11 Same Folder</title>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
+
+    :root{
+      --bg:#f0f0f0;
+      --brand:#4a4d9e;
+      --dark:#111827;
+      --muted:#6b7280;
+      --danger:#ef4444;
+      --success:#22c55e;
+      --warn:#f59e0b;
+      --card:#ffffff;
+    }
+    *{box-sizing:border-box}
+    html,body{min-height:100%;margin:0}
+    body{
+      background:radial-gradient(circle at top,#ffffff 0,#f0f0f0 52%,#e7e8fa 100%);
+      color:var(--dark);
+      font-family:'Tajawal',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+      display:flex;
+      justify-content:center;
+      padding:14px;
+    }
+    body.home-mode{padding:0;background:#000;display:block;overflow:hidden}
+    body.game-mode{
+      padding:0;
+      min-height:100vh;
+      background-color:#f0f0f0;
+      background-image:url('game-bg.png');
+      background-size:cover;
+      background-position:center;
+      background-attachment:fixed;
+    }
+    #app{
+      width:100%;
+      max-width:520px;
+      min-height:92vh;
+      max-height:94vh;
+      background:rgba(240,240,240,.92);
+      border-radius:32px;
+      box-shadow:0 18px 55px rgba(23,24,39,.12);
+      overflow:auto;
+      position:relative;
+      border:1px solid rgba(74,77,158,.12);
+      scroll-behavior:auto;
+    }
+    #app.home-mode{
+      width:100vw;max-width:none;height:100vh;min-height:100vh;max-height:none;
+      border-radius:0;border:0;box-shadow:none;background:#000;overflow:auto;
+    }
+    #app.game-mode{
+      width:100vw;
+      max-width:none;
+      height:100vh;
+      min-height:100vh;
+      max-height:none;
+      border-radius:0;
+      border:0;
+      box-shadow:none;
+      background:transparent;
+      overflow:auto;
+    }
+
+    .screen{padding:18px;min-height:100%}
+    .center{min-height:80vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px}
+    h1,h2,h3,p{margin:0}
+    .brand{color:var(--brand)}
+    .sub{color:var(--muted);line-height:1.7}
+    .tiny{font-size:12px;color:var(--muted);line-height:1.6}
+    .text-center{text-align:center}
+    .text-right{text-align:right}
+    .mt-1{margin-top:4px}.mt-2{margin-top:8px}.mt-3{margin-top:12px}.mt-4{margin-top:16px}
+    .mb-2{margin-bottom:8px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:16px}
+    .w-full{width:100%}
+    .space-y-3>*+*{margin-top:12px}.space-y-4>*+*{margin-top:16px}
+
+    .logo-mark{
+      width:86px;height:86px;border-radius:28px;background:var(--brand);color:#fff;
+      display:grid;place-items:center;font-size:38px;font-weight:900;
+      box-shadow:0 12px 26px rgba(74,77,158,.32);transform:rotate(-4deg)
+    }
+    .home-page{position:relative;background-size:cover;background-position:center;border-radius:0}
+    .home-page::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);pointer-events:none;z-index:0}
+
+    .btn{
+      width:100%;border:0;border-radius:18px;padding:14px 18px;font-weight:900;font-size:16px;
+      cursor:pointer;transition:transform .12s, opacity .12s;display:flex;align-items:center;justify-content:center;gap:8px;
+      font-family:inherit;
+    }
+    .btn:active{transform:scale(.98)}
+    .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+    .btn-primary{background:var(--brand);color:#fff;box-shadow:0 10px 20px rgba(74,77,158,.24)}
+    .btn-secondary{background:#fff;color:var(--brand);border:2px solid var(--brand)}
+    .btn-success{background:var(--success);color:#fff}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn-warn{background:var(--warn);color:#fff}
+    .btn-ghost{background:rgba(255,255,255,.68);color:var(--brand);width:auto;padding:8px 12px;border:1px solid rgba(74,77,158,.15)}
+    .btn-dark{background:#111827;color:#fff}
+
+    .input,.select{
+      width:100%;background:#fff;border:2px solid #e5e7eb;border-radius:18px;padding:14px 16px;
+      font-size:16px;font-weight:800;outline:none;text-align:right;font-family:inherit;color:var(--dark)
+    }
+    .input:focus,.select:focus{border-color:var(--brand);box-shadow:0 0 0 4px rgba(74,77,158,.13)}
+    .box{
+      background:rgba(255,255,255,.95);border-radius:22px;padding:15px;
+      box-shadow:0 8px 22px rgba(23,24,39,.06);border:1px solid rgba(17,24,39,.05)
+    }
+    .glass{
+      background:rgba(255,255,255,.78);
+      backdrop-filter:blur(9px);
+      border:1px solid rgba(255,255,255,.62);
+    }
+    .topbar{
+      position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:8px;
+      margin:0 -6px 14px;padding:8px 6px;border-radius:18px;background:rgba(255,255,255,.60);backdrop-filter:blur(10px)
+    }
+    .top-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .pill{
+      display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:900;
+      background:#eef0ff;color:var(--brand);white-space:nowrap
+    }
+    .pill.dark{background:#111827;color:#fff}
+    .room-code{
+      direction:ltr;background:#fff;border:2px dashed var(--brand);color:var(--brand);font-size:30px;
+      letter-spacing:5px;font-weight:900;border-radius:20px;padding:15px;text-align:center
+    }
+    .list{display:flex;flex-direction:column;gap:8px}
+    .row{
+      display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;border-radius:16px;
+      padding:11px 13px;border:1px solid #eef0f4
+    }
+    .tag{
+      display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:900;border-radius:999px;
+      padding:4px 9px;background:#eef0ff;color:var(--brand);white-space:nowrap
+    }
+    .tag.me{background:#e8fff1;color:#15803d}.tag.host{background:#fff7ed;color:#c2410c}
+    .tag.warn{background:#fffbeb;color:#b45309}.tag.danger{background:#fee2e2;color:#b91c1c}
+    .tag.ok{background:#dcfce7;color:#166534}
+
+    .grid-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+    .char-card{
+      min-height:128px;border-radius:18px;border:2px solid transparent;background:#fff;
+      box-shadow:0 5px 13px rgba(23,24,39,.08);display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:5px;text-align:center;padding:9px;cursor:pointer;transition:.15s;
+      background-size:cover;background-position:center;overflow:hidden
+    }
+    .char-card:hover{transform:translateY(-2px);border-color:var(--brand)}
+    .char-card.locked{opacity:.50;cursor:not-allowed;filter:grayscale(.4)}
+    .char-card.chosen{border-color:var(--brand);opacity:1}
+    .char-card.back-card{padding:0;background-color:var(--brand)}
+    .char-content{width:100%;height:100%;min-height:112px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px}
+    .char-emoji{font-size:32px}
+    .char-name{font-weight:900;font-size:12px;line-height:1.25}
+    .big-character-card{
+      width:min(300px,82vw);aspect-ratio:5/7;margin:0 auto;border-radius:28px;
+      background:#fff url('character-card-face.png') center/cover no-repeat;
+      box-shadow:0 18px 40px rgba(23,24,39,.20);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:26px;border:2px solid rgba(74,77,158,.18)
+    }
+
+    .scoreboard{display:flex;flex-direction:column;gap:8px}
+    .score-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:#fff;border-radius:16px;padding:10px 12px;border:2px solid transparent}
+    .score-row.current{border-color:var(--warn);background:#fffbeb}.score{font-weight:900;font-size:18px}.score.zero{color:var(--success)}.score.neg{color:var(--danger)}
+    .status-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#22c55e;margin-inline-start:6px}.status-dot.off{background:#ef4444}.offline-row{opacity:.62;filter:grayscale(.6)}
+
+    .game-bg{position:relative;min-height:100vh;max-width:520px;margin:0 auto;background:transparent}
+    .game-bg>*{position:relative;z-index:1}
+    .phase-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:transparent;backdrop-filter:none;z-index:5;min-height:100vh}
+    .phase-card{background:var(--brand);color:#fff;border-radius:30px;padding:24px 20px;box-shadow:0 25px 70px rgba(0,0,0,.32);line-height:1.8;text-align:right;border:2px solid rgba(255,255,255,.18)}
+    .phase-card h2{font-size:28px;font-weight:900;margin-bottom:8px;color:#fff}.phase-card p{color:#fff;font-weight:800;line-height:1.9}.phase-card .btn{background:#fff;color:var(--brand);margin-top:16px}
+
+    .game-card-wrap{perspective:900px;max-width:300px;margin:0 auto}
+    .game-card{width:100%;aspect-ratio:5/7;border-radius:28px;position:relative;transform-style:preserve-3d;transition:transform .42s}
+    .game-card.flipped{transform:rotateY(180deg)}
+    .face{
+      position:absolute;inset:0;border-radius:28px;backface-visibility:hidden;overflow:hidden;
+      box-shadow:0 15px 35px rgba(23,24,39,.16);border:2px solid rgba(74,77,158,.18)
+    }
+    .front{
+      transform:rotateY(180deg);
+      background:#fff url('card-face.png') center/cover no-repeat;
+      color:#111827;
+    }
+    .back{
+      background:var(--brand) url('card-back.png') center/cover no-repeat;
+      display:block;
+    }
+    .card-face-content{
+      position:absolute;inset:0;
+      padding:40px 32px 26px;
+      display:flex;flex-direction:column;justify-content:space-between;align-items:stretch;
+      background:transparent;
+    }
+    .card-type{font-size:13px;font-weight:900;color:var(--brand);text-align:right}
+    .card-title{font-size:24px;font-weight:900;text-align:center;line-height:1.25}
+    .card-text{font-size:18px;font-weight:900;line-height:1.65;text-align:center}
+    .points{align-self:center;background:#fee2e2;color:#b91c1c;border-radius:999px;padding:7px 16px;font-weight:900}
+    .points.blue{background:#eef0ff;color:var(--brand)}
+    .points.dark{background:#111827;color:#fff}
+
+    .effects{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+    .effect{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:16px;padding:10px 12px;font-size:13px;font-weight:800;line-height:1.5}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .three{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .footer-actions{
+      position:sticky;bottom:0;background:linear-gradient(transparent,rgba(255,255,255,.86) 18%,rgba(255,255,255,.92));
+      padding-top:16px;padding-bottom:4px;z-index:10
+    }
+    .notice{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:16px;padding:12px;line-height:1.6;font-weight:800}
+    .ok{background:#ecfdf5;border-color:#bbf7d0;color:#166534}.bad{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+    .vote-line{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+    .vote-chip{border-radius:999px;padding:7px 11px;background:#fff;border:1px solid #e5e7eb;font-size:12px;font-weight:900}
+    .punishment-card{background:#111827;color:#fff;border-radius:24px;padding:18px;border:2px solid rgba(255,255,255,.14);box-shadow:0 18px 45px rgba(0,0,0,.28)}
+
+    @media(max-width:420px){
+      .screen{padding:12px}
+      #app{border-radius:22px}
+      .grid-cards{gap:6px}
+      .char-card{min-height:112px}
+      .card-text{font-size:16px}
+      .card-title{font-size:21px}
+      .room-code{font-size:23px}
+      .btn{font-size:15px}
+      .game-card-wrap{max-width:280px}
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+<script>
+// ===================== 1) Firebase config =====================
+const firebaseConfig = {
+  apiKey: "AIzaSyDINBsTEFnL7AR_Bf6DdqJ3AjS2R9QbdWQ",
+  authDomain: "a3da-scroll.firebaseapp.com",
+  projectId: "a3da-scroll",
+  storageBucket: "a3da-scroll.firebasestorage.app",
+  messagingSenderId: "828255982641",
+  appId: "1:828255982641:web:d3302ebba9dba54e113110",
+  measurementId: "G-Z5QSVMC0Z1"
+};
+
+const FIREBASE_READY = firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('YOUR_');
+let db = null;
+let FIREBASE_SDK_LOADED = false;
+try {
+  FIREBASE_SDK_LOADED = typeof firebase !== 'undefined' && !!firebase.initializeApp && !!firebase.firestore;
+  if (FIREBASE_READY && FIREBASE_SDK_LOADED) {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+  }
+} catch (e) {
+  console.error('Firebase init failed:', e);
+  FIREBASE_SDK_LOADED = false;
+  db = null;
+}
+
+// ===================== 2) Assets - embedded data URLs, no assets folder needed =====================
+const LOGO_IMAGE = "logo.png";
+const HOME_BG_IMAGE = "home-bg.png";
+const GAME_BG_IMAGE = "game-bg.png";
+const CARD_BACK_IMAGE = "card-back.png";
+const CARD_FACE_IMAGE = "card-face.png";
+const CHARACTER_CARD_BACK_IMAGE = "character-card-back.png";
+const CHARACTER_CARD_FACE_IMAGE = "character-card-face.png";
+
+// ===================== 3) Game data =====================
+const CHARACTERS = [
+  {
+    "id": "char_1",
+    "name": "أمهات التيك توك",
+    "emoji": "🧕",
+    "desc": "عايشة دور الأم لأي كارت وحش يطلع، وتزرع قلقك الوهمي عشان تسكّت اللي قدامك.",
+    "phrases": [
+      "اكتبولي بقى في الكومنتات لو مكاني كنتوا هتعملوا إيه؟",
+      "يا واد بس بقى بطل دوشة",
+      "معلش الولاد مجنني مابيفصلوش"
+    ]
+  },
+  {
+    "id": "char_2",
+    "name": "بتاع الريتش",
+    "emoji": "🤳",
+    "desc": "عايش في لايف 24 ساعة. أي كارت يحوله دراما ويصوره عشان مشاهدات وفولورز.",
+    "phrases": [
+      "كبسوا كبسوا الشير واقع!",
+      "أعداء النجاح بيتحاربوني!",
+      "أنا هطلعكم ترند على قفايا"
+    ]
+  },
+  {
+    "id": "char_3",
+    "name": "كومنتات تويتر",
+    "emoji": "💬",
+    "desc": "هجومي وناقد وساخر، أي كلام يتحول لمعركة رأي عام.",
+    "phrases": [
+      "وده المفروض يعجبنا؟",
+      "الطرح ضعيف",
+      "مش كل رأي لازم يتقال"
+    ]
+  },
+  {
+    "id": "char_4",
+    "name": "الشخصية المتنمرة",
+    "emoji": "😈",
+    "desc": "التريقة مش لعب، والحركة بائفة. بترد بسخرية وتقفل الموضوع بإهانة خفيفة.",
+    "phrases": [
+      "معلش يعني هو ده آخرك؟",
+      "ده إنت بتسميه لعب يعني؟",
+      "اللي بعده يا جماعة ده طلع فاضي خالص"
+    ]
+  },
+  {
+    "id": "char_5",
+    "name": "لينكد إن",
+    "emoji": "💼",
+    "desc": "أي موقف عادي يتحول لإنجاز مهني ورحلة نمو.",
+    "phrases": [
+      "سعيد بمشاركة التجربة",
+      "اتعلمت من الفشل ده",
+      "رحلة نمو حقيقية"
+    ]
+  },
+  {
+    "id": "char_6",
+    "name": "موظف الكول سنتر",
+    "emoji": "🎧",
+    "desc": "أكتر واحد بارد ورسمي في القعدة، بيرد على الهجوم كأنه بيقرأ من سكريبت.",
+    "phrases": [
+      "أنا مقدر جدًا استياء حضرتك يا فندم",
+      "أقدر أساعدك إزاي النهارده يا فندم؟",
+      "بشكرك جدًا على سعة صدرك"
+    ]
+  },
+  {
+    "id": "char_7",
+    "name": "مدرسين ثانوية عامة",
+    "emoji": "📚",
+    "desc": "بيحوّل أي موقف لسؤال امتحان أو محاضرة تحفيز.",
+    "phrases": [
+      "ركز معايا يا بطل",
+      "السؤال ده جاي جاي",
+      "لسه قدامك فرصة تقفل"
+    ]
+  },
+  {
+    "id": "char_8",
+    "name": "شخصية اليوتيوبر",
+    "emoji": "📹",
+    "desc": "راعي هدفه طلب اللايك والشير كأنه بيصور فلوج ومبتخشّش في الموضوع على طول.",
+    "phrases": [
+      "اضغط اللايك المتين قبل ما أسحب الكارت!",
+      "وصّلوا المقطع ده لـ50 ألف لايك",
+      "سحبة الورقة دي برعاية..."
+    ]
+  },
+  {
+    "id": "char_9",
+    "name": "صفحة أخبار عاجلة",
+    "emoji": "📰",
+    "desc": "أي حاجة عادية جدًا تتحول لخبر عاجل مرعب ومليان تفاصيل صادمة.",
+    "phrases": [
+      "عاجل الآن",
+      "تفاصيل صادمة",
+      "مصادر تؤكد"
+    ]
+  },
+  {
+    "id": "char_10",
+    "name": "بتاع نظريات المؤامرة",
+    "emoji": "🕵️",
+    "desc": "مقتنع إن مفيش صدفة، وكل كارت خطة مقصودة من اللاعبين عشان يوقعوك.",
+    "phrases": [
+      "مين المستفيد من الكارت ده؟",
+      "دي مش صدفة يا جماعة",
+      "هما متفقين عليا عشان أنا كاشفهم"
+    ]
+  },
+  {
+    "id": "char_11",
+    "name": "الشخصية الصيوحة",
+    "emoji": "😭",
+    "desc": "الصياح والاعتراض على أي كارت يظهر ليك أو لصاحبك صوتك يبقى عالي.",
+    "phrases": [
+      "يخربيت الظلم",
+      "الورق متعلم",
+      "اشمعنا أنا؟",
+      "إنتوا متفقين عليا؟"
+    ]
+  },
+  {
+    "id": "char_12",
+    "name": "شات جي بي تي",
+    "emoji": "🤖",
+    "desc": "دايمًا مع اللي بيكلمه وبيطبله مهما قال.",
+    "phrases": [
+      "وجهة نظر قوية جدًا",
+      "كلامك منطقي جدًا",
+      "ده يدل على وعي كبير"
+    ]
+  },
+  {
+    "id": "char_13",
+    "name": "كابلز التيك توك",
+    "emoji": "💑",
+    "desc": "كل حاجة تتحول لعلاقة وغيرة واختبار حب.",
+    "phrases": [
+      "أنا وهو ضد العالم",
+      "عملتله تيست ونجح",
+      "قولوله يصالحني"
+    ]
+  },
+  {
+    "id": "char_14",
+    "name": "عريس الجنة",
+    "emoji": "🤵",
+    "desc": "الشخصية السرسجية اللي شايف الدنيا زفة، وكل موقف لازم يتاخد بثقة وأفورة.",
+    "phrases": [
+      "الليلة ليلتنا يا رجالة",
+      "افتحلي السكة يا نجم",
+      "باركولي بقى"
+    ]
+  },
+  {
+    "id": "char_15",
+    "name": "الأشموني",
+    "emoji": "🧔",
+    "desc": "شخصية شعبية واثقة بتحكي كتير وتدخل حكم وأمثال.",
+    "phrases": [
+      "بص يا نجم",
+      "اسمع مني وأنا أقولك الخلاصة",
+      "اللي عاش شاف"
+    ]
+  },
+  {
+    "id": "char_16",
+    "name": "ضياء العوضي",
+    "emoji": "🥗",
+    "desc": "دكتور الطيبات، بيربط أي مشكلة بالأكل والطيبات والممنوعات.",
+    "phrases": [
+      "ده من الممنوعات يا جماعة",
+      "ارجعوا للطيبات وهتفهموا",
+      "الناس اتضحك عليها سنين"
+    ]
+  },
+  {
+    "id": "char_17",
+    "name": "مؤمن الأشموني",
+    "emoji": "🗣️",
+    "desc": "بينصح من قلب التجربة وبيحوّل أي موقف لدرس حياة.",
+    "phrases": [
+      "خدها مني نصيحة",
+      "أنا بقولك الصح",
+      "الدنيا علمتني كتير"
+    ]
+  },
+  {
+    "id": "char_18",
+    "name": "سترونج إندبندنت وومن",
+    "emoji": "💅",
+    "desc": "عايشة دور المرأة الحديدية اللي مش محتاجة مساعدة حد، وبتدافعي عن البنات وبتهاجمي الولاد على بطال.",
+    "phrases": [
+      "أنا أقدر أنفذ الحكم لوحدي مش محتاجة مساعدة!",
+      "أنتوا كلكوا توكسيك أصلاً",
+      "طبعًا ما هو ده التفكير الذكوري اللي جايبنا ورا"
+    ]
+  }
+];
+
+const SITUATION_CARDS = [
+  {
+    "id": "sit_1",
+    "title": "دبيسة الحساب",
+    "text": "نزلتوا تاكلوا في مكان غالي واكتشفت إنك نسيت محفظتك وموبايلك فصل شحن، هتقنعهم إزاي تدبسهم في الحساب من غير ما يضربوك؟",
+    "points": 10
+  },
+  {
+    "id": "sit_2",
+    "title": "سؤال حماك",
+    "text": "روحت تتقدم لواحدة، وأبوها سألك \"بتشرب سجاير يا بني؟\" وأنت فعلاً بتشرب بس مش عاوز تبوظ الجوازة.. هترد تقوله إيه يخلعه وفي نفس الوقت متبقاش كداب؟",
+    "points": 10
+  },
+  {
+    "id": "sit_3",
+    "title": "رسالة الدكتور",
+    "text": "بعت رسالة شتيمة في دكتور المادة، واكتشفت إنك بعتها على جروب الدفعة اللي الدكتور فيه.. هتكتب إيه تبرر بيه الموقف قبل ما يشوفها؟",
+    "points": 10
+  },
+  {
+    "id": "sit_4",
+    "title": "البرزنتيشن الكارثة",
+    "text": "واقف بتشرح مشروع التخرج أو برزنتيشن مهمة، وفجأة اللاب توب عرض صورة \"ميمز\" ليك إنت والشلة أو صورة محرجة جداً بالغلط على الشاشة.. لم الدور قدام الدكتور!",
+    "points": 10
+  },
+  {
+    "id": "sit_5",
+    "title": "المايك المفتوح",
+    "text": "كنت في ميتينج أونلاين أو محاضرة، ونسيت تقفل المايك وابتديت تغني أو تزعق في حد في البيت.. الميتينج كله سمعك، هتبرر ده إزاي للدكتور أو المدير؟",
+    "points": 10
+  },
+  {
+    "id": "sit_6",
+    "title": "المشروع الفاشل",
+    "text": "صاحبك الأنتيم جالك بفكرة مشروع فاشل جداً ومتحمس ليه، هتحبطه وتجيبه لأرض الواقع إزاي من غير ما تخسره؟",
+    "points": 10
+  },
+  {
+    "id": "sit_7",
+    "title": "عزومة المراكبية",
+    "text": "دخلت فرح بالغلط عشان تاكل، ولقيت الكاميرا في وشك والمذيع بيقولك \"كلمة للعروسين\".. هتقول إيه عشان متتفضحش إنك متعرفهمش؟",
+    "points": 10
+  },
+  {
+    "id": "sit_8",
+    "title": "الجاكيت المحروق",
+    "text": "استلفت جاكيت أوريجينال غالي جداً من واحد قاعد معاك دلوقتي، والجاكيت اتلسع منك أو باظ.. وهو لسه بيسألك فجأة في القعدة: \"هتجيب الجاكيت إمتى عشان مسافر بيه بكرة؟\".. مهدله الكارثة وحاول تخرج منها سليمة بشخصيتك!",
+    "points": 10
+  },
+  {
+    "id": "sit_9",
+    "title": "فيديو السرسجة",
+    "text": "شفتي فيديو تيك توك كله \"سرسجة\"، وعملتيه Share بالغلط على \"جروب الدفعة\"، هترقعي الموقف إزاي؟",
+    "points": 5
+  },
+  {
+    "id": "sit_10",
+    "title": "الشتيمه",
+    "text": "كتبت كومنت \"يبن ال ###\" من أكونتك الأساسي بالغلط على بوست لصاحبك مبيعملش حاجة في حياته بدل الأكونت الفيك، رقعها قدامه!",
+    "points": 5
+  },
+  {
+    "id": "sit_11",
+    "title": "الستوري الكارثة",
+    "text": "نزلت ستوري Public وإنت بتغني بصوت وحش بدل Close Friends وجابت 500 فيو، مثّل رد فعلك وهترد تقول إيه.",
+    "points": 5
+  },
+  {
+    "id": "sit_12",
+    "title": "الفويس الغلط",
+    "text": "بعت فويس نوت بتشتم حد من الشلة للشخص نفسه بالغلط وعمل Seen! اتصل بيه ورقع الكارثة.",
+    "points": 5
+  },
+  {
+    "id": "sit_13",
+    "title": "العيان الكداب",
+    "text": "اتقفشت وإنت بتكذب علينا وبتقول إنك عيان عشان متنزلش القهوة، بس إحنا شفناك في ستوري في مكان تاني، برر موقفك!",
+    "points": 5
+  },
+  {
+    "id": "sit_14",
+    "title": "اللايك الكارثي",
+    "text": "بالغلط عملت \"لايك\" لصورة قديمة من 2019 لـ \"الإكس\" بتاعت واحد قاعد معانا دلوقتي.. برر الموقف بسرعة وورط حد تاني!",
+    "points": 5
+  },
+  {
+    "id": "sit_15",
+    "title": "المدير",
+    "text": "مديرك في الشغل شافك في المول وإنت واخد إجازة عشان \"وفاة حد من قرايبك\".. هتخلع من الموقف إزاي أول ما يشوفك؟",
+    "points": 5
+  },
+  {
+    "id": "sit_16",
+    "title": "دليفري المدرج",
+    "text": "قاعد في سكشن مهم جداً والدكتور بيشرح ومقفل الدنيا، فجأة عامل الدليفري فتح الباب ووقف يزعق على أوردر الكريب ومقفل تليفونه.. اطلع استلم الأوردر ورد عليه وعلى الدكتور بشخصيتك!",
+    "points": 5
+  },
+  {
+    "id": "sit_17",
+    "title": "الشنطة الغلط",
+    "text": "رايح الجيم وبتفتح شنطتك وسط زمايلك عشان تطلع حاجتك، اكتشفت إنك بدلت الشنطة بالغلط مع شنطة مامتك ومليانة بصل وطماطم وليفة مواعين، برر الموقف ده بشخصيتك!",
+    "points": 5
+  },
+  {
+    "id": "sit_18",
+    "title": "الاسم المنسي",
+    "text": "بتعرف واحد صاحبك جديد على الشلة، وقعدت تفخم فيه وتقول \"ده أخويا وأجدع حد عرفته\"، وفي نص الكلام اكتشفت إنك ناسي اسمه أصلاً وهو مستنيك تنطق وتعرفهم بيه.. اخرج من المطب ده من غير ما تحرجه أو تحرج نفسك!",
+    "points": 5
+  },
+  {
+    "id": "sit_19",
+    "title": "السواق البلطجي",
+    "text": "قاعد في ميكروباص وعطيت للسواق 100 جنيه ونسي يديك الباقي، والسواق شكله يخوف.. هتجيب باقي فلوسك إزاي؟",
+    "points": 5
+  },
+  {
+    "id": "sit_20",
+    "title": "عدو الانترفيو",
+    "text": "دخلت انترفيو شغل، واكتشفت إن الـ HR هو الشخص اللي قاعد على يمينك دلوقتي واللي بينكم خناقة قديمة.. إقنعه يعينك!",
+    "points": 5
+  },
+  {
+    "id": "sit_21",
+    "title": "إبراهيم الأبيض",
+    "text": "اتعملك منشن في سكرين شوت لبوست إعدادي مليان حكم ومسدسات، اشرح حالتك النفسية وقتها!",
+    "points": 3
+  },
+  {
+    "id": "sit_22",
+    "title": "صوت الدوشة",
+    "text": "مامتك اتصلت بيك وسألتك \"إيه صوت الدوشة دي؟\" وإنت قايلها إنك بتذاكر في المكتبة، اقنعنا هترد تقول إيه؟",
+    "points": 3
+  },
+  {
+    "id": "sit_23",
+    "title": "السلف",
+    "text": "واحد من الشلة طلب يستلف منك 500 جنيه لحد أول الشهر، هترد تقول إيه تخلع بيه؟",
+    "points": 3
+  },
+  {
+    "id": "sit_24",
+    "title": "الهدية البشعة",
+    "text": "صاحبك جابلك هدية عبارة عن تيشرت لونه بشع ومقاسه مش مقاسك، وبيسألك إيه رأيك ألبسهولك دلوقتي.. هترد تقول إيه من غير ما تكسفه؟",
+    "points": 3
+  },
+  {
+    "id": "sit_25",
+    "title": "الاسم الغريب",
+    "text": "حد من الشلة مسك موبايلك فجأة واكتشف إنك مسميه على الموبايل باسم مضحك أو مهين جداً.. هتبررله الموقف إزاي؟",
+    "points": 3
+  },
+  {
+    "id": "sit_26",
+    "title": "النكتة البايخة",
+    "text": "واحد صاحبك بيحكيلك نكتة بايخة جداً للمرة العاشرة ومستني تضحك، هتحرجه إزاي بشياكة عشان يبطل؟",
+    "points": 3
+  },
+  {
+    "id": "sit_27",
+    "title": "الطابور",
+    "text": "واقف في طابور طويل جداً بقالك ساعة، وواحد جه وقف قدامك فجأة وعمل عبيط، هترد عليه إزاي بشخصيتك عشان ترجعه ورا؟",
+    "points": 3
+  },
+  {
+    "id": "sit_28",
+    "title": "العزومة",
+    "text": "حد من الشلة عزمك على أكل هو اللي طابخه، والأكل طعمه بشع حرفياً، وبيبصلك بشغف مستني رأيك، هتقوله إيه وتتصرف إزاي بشخصيتك؟",
+    "points": 3
+  },
+  {
+    "id": "sit_29",
+    "title": "الاسكرين شوت",
+    "text": "أخدت سكرين شوت لشات بينك وبين واحد صاحبك عشان تبعتها للشلة تسفوا عليه، وقمت باعت الاسكرين شوت لنفس الشخص بالغلط! هترقعها تقوله إيه بشخصيتك؟",
+    "points": 3
+  },
+  {
+    "id": "sit_30",
+    "title": "الإنترفيو العجيب",
+    "text": "روحت إنترفيو شغل، والـ HR سألك: \"لو أنت نوع خضار.. تحب تكون إيه وليه؟\" جاوب وإقنعه.",
+    "points": 3
+  }
+];
+
+const ACTION_CARDS = [
+  {
+    "id": "act_1",
+    "title": "رسالة الإكس",
+    "text": "ابعت رسالة لـ \"الإكس\" (أو حد كنت مكرش عليه زمان) وقوله: \"الرسالة دي اتبعتت بالغلط، امسحها من فضلك\".",
+    "points": 10
+  },
+  {
+    "id": "act_2",
+    "title": "رسايل الـ DM",
+    "text": "إدي تليفونك للشخص اللي في وشك، يفتح الـ DMs عشوائياً ويختار شات، ويقرأ للقعدة آخر رسالتين مبعوتين بينك وبين الشخص ده.",
+    "points": 10
+  },
+  {
+    "id": "act_3",
+    "title": "بوست الاعتزال",
+    "text": "افتح تويتر (X) أو فيسبوك، واكتب بوست \"أنا قررت أعتزل الناس وأعيش في جبل، الوداع.\" وسيبه 10 دقايق.",
+    "points": 10
+  },
+  {
+    "id": "act_4",
+    "title": "خطوبة وهمية",
+    "text": "ابعت ڤويس نوت لواحد صاحبكم مش قاعد معاكم وقوله: \"أنا قررت أخطب.. أيوة هي اللي في بالك\"، وممنوع ترد عليه بعدها.",
+    "points": 10
+  },
+  {
+    "id": "act_5",
+    "title": "الكومنت الفضائحي",
+    "text": "ادخل على فيسبوك أو إنستجرام، اختار صورة عادية جداً لواحد صاحبك، واكتبله كومنت: \"يا ريت ترجعلي الـ 1000 جنيه اللي استلفتهم مني عشان أهلي طردوني في الشارع\".. وماتمسحوش وماتردش عليه غير لما الجيم كله يخلص!",
+    "points": 10
+  },
+  {
+    "id": "act_6",
+    "title": "مكالمة الهروب",
+    "text": "امسك الموبايل رن علي حد من اهلك قوله انك مش هترجع البيت تاني وانت فاتح الاسبيكر.",
+    "points": 10
+  },
+  {
+    "id": "act_7",
+    "title": "عزومة الماما",
+    "text": "رن علي مامتك قولها انا جاي ومعايا عشره صحابي عزمتهم علي الغدا.",
+    "points": 10
+  },
+  {
+    "id": "act_8",
+    "title": "جروب العيلة",
+    "text": "إدي تليفونك للي على يمينك، وخليه يبعت رسالة لجروب العيلة عندك يقولهم \"أنا قررت أسيب الكلية/الشغل\".",
+    "points": 10
+  },
+  {
+    "id": "act_9",
+    "title": "الكيبورد العشوائي",
+    "text": "افتح شات أي حد من زمايلك واكتب جملة: \"أنا بصراحة مخبي عليك إن أنا...\" وخلي الكيبورد يكمل الجملة 5 مرات ورا بعض، وابعتها من غير ما تعدل حرف!",
+    "points": 10
+  },
+  {
+    "id": "act_10",
+    "title": "شات الواتساب",
+    "text": "افتح آخر شات عندك على الواتساب واقرأ آخر رسالة مبعوتة بصوت عالي (مهما كانت).",
+    "points": 5
+  },
+  {
+    "id": "act_11",
+    "title": "كشف الحساب",
+    "text": "افتح أبلكيشن \"طلبات\" أو \"أوبر\" ووري القعدة كلها إنت صرفت كام في آخر 30 يوم.",
+    "points": 5
+  },
+  {
+    "id": "act_12",
+    "title": "كشف المستور",
+    "text": "افتح خانة الـ Search History في إنستجرام أو تيك توك ووري القعدة كلها إنت بتبحث عن إيه آخر 5 مرات.",
+    "points": 5
+  },
+  {
+    "id": "act_13",
+    "title": "قايمة البلوك",
+    "text": "افتح قايمة الـ Blocked Contacts عندك على الواتساب أو إنستجرام، واقرأ للقعدة بصوت عالي آخر شخص إنت عامله بلوك وقول السبب الحقيقي.",
+    "points": 5
+  },
+  {
+    "id": "act_14",
+    "title": "المكالمة العميا",
+    "text": "اختار رقم عشوائي من سجل مكالماتك، افتح الاسبيكر، وقوله \"أنا عرفت كل حاجة.. إزاي تعملوا فيا كده؟\" واقفل في وشه.",
+    "points": 5
+  },
+  {
+    "id": "act_15",
+    "title": "المصيبة",
+    "text": "اختار رقم زميل أو حد من العيلة، اتصل بيه وافتح الاسبيكر وقوله مخضوض جداً: \"أنا عملت مصيبة ومحتاج أستخبى عندك يومين\".. واقفل السكة فوراً!",
+    "points": 5
+  },
+  {
+    "id": "act_16",
+    "title": "الفويس الغامض",
+    "text": "ابعت فويس نوت مدتها 10 ثواني لأي حد من صحابك بره اللعبة، وكل اللي هتقوله فيها: \"خبوا الجثة بسرعة، أنا جاي في الطريق\".. واقفل النت عن موبايلك 10 دقايق كاملين.",
+    "points": 5
+  },
+  {
+    "id": "act_17",
+    "title": "العملية نجحت",
+    "text": "خلي القعدة تختارلك رقم من سجل الأسماء عندك، رن عليه وقوله: \"العملية نجحت، هنتقابل فين؟\" واقفل.",
+    "points": 5
+  },
+  {
+    "id": "act_18",
+    "title": "الأوردر العجيب",
+    "text": "اتصل بأي مطعم أو سوبر ماركت قريب، واسأله بجدية تامة: \"لو سمحت عندكم كشري بالمانجا أو شاورما باللوتس؟\".. لو ضحكت قبل ما تقفل المكالمة تلبس الكارت.",
+    "points": 5
+  },
+  {
+    "id": "act_19",
+    "title": "لعبة الإيموجي",
+    "text": "ادي موبايلك للشخص اللي على يمينك، يحقله يختار \"إيموجي واحد بس\" ويبعته لأي جهة اتصال يختارها من عندك من غير أي كلام، وأنت تقعد تتفرج على الردود في صمت.",
+    "points": 5
+  },
+  {
+    "id": "act_20",
+    "title": "الريبلاي المريب",
+    "text": "ادخل على أول ستوري تقابلك لأي حد (مش من الشلة)، واعمله ريبلاي بـ 🥺 .. وممنوع ترد عليه أو تشرحله إنها لعبة غير لما اللعبة تخلص.",
+    "points": 5
+  },
+  {
+    "id": "act_21",
+    "title": "تقليد الدكتور",
+    "text": "قلد أكتر دكتور في الكلية مطلع عينكم، ولو القعدة ماعرفتوش في خلال 15 ثانية، هتلبس حكم.",
+    "points": 5
+  },
+  {
+    "id": "act_22",
+    "title": "المحفظة",
+    "text": "طلع محفظتك ووري الشلة كلها فيها كام بالظبط، وصرفتها في إيه النهارده بالتفصيل.",
+    "points": 3
+  },
+  {
+    "id": "act_23",
+    "title": "الـ Save",
+    "text": "وري الشلة كلها آخر \"Meme\" أو \"Reel\" عملتله Save على إنستجرام.",
+    "points": 3
+  },
+  {
+    "id": "act_24",
+    "title": "الفويس نوت الكارثة",
+    "text": "ابعت ريكورد مدته 10 ثواني لأي حد تطلعه القعدة من جهات اتصالك، وغني فيه مقطع من أغنية شعبية من غير ولا كلمة زيادة.",
+    "points": 3
+  },
+  {
+    "id": "act_25",
+    "title": "الكلب الأزرق",
+    "text": "ابعت ريكورد لجروب دفعتك أو شغلك وقول: \"يا جماعة حد شاف الكلب بتاعي؟ هو لونه أزرق\".",
+    "points": 3
+  },
+  {
+    "id": "act_26",
+    "title": "المشية",
+    "text": "قلد مشية أو حركة مميزة لواحد من اللي قاعدين معاك، ولما يعرفوه كمل الجولة بيها.",
+    "points": 3
+  },
+  {
+    "id": "act_27",
+    "title": "أغنية الرعب",
+    "text": "غني أغنية أطفال (زي ماما زمانها جاية) بس بنبرة صوت شريرة ومرعبة جداً.",
+    "points": 3
+  },
+  {
+    "id": "act_28",
+    "title": "الموهبة المدفونة",
+    "text": "غني أغنية شعبية أو مهرجان بس بطريقة أوبرالية ومسرحية جداً قدام القعدة لمدة دقيقة.",
+    "points": 3
+  },
+  {
+    "id": "act_29",
+    "title": "بياع الهوا",
+    "text": "امسك أي حاجة تافهة من على الترابيزة (ولاعة، منديل) وحاول تبيعها لحد جنبكوا بـ 1000 جنيه بأي طريقة مقنعة.",
+    "points": 3
+  },
+  {
+    "id": "act_30",
+    "title": "نظرة الأسد",
+    "text": "بص في عين أكتر حد بيضحك في القعدة لمدة دقيقتين من غير ما ترمش ولا تضحك.. لو ضحكت تلبس الكارت.",
+    "points": 3
+  }
+];
+
+const HASIB_CARDS = [
+  {
+    "id": "has_1",
+    "title": "كارت الدبيس",
+    "text": "اللي سحب الكارت ده ملزم يحاسب على مشاريب القعدة النهارده، أو يتسحب منه 10 نقط مرة واحدة.",
+    "points": 10,
+    "effectType": "choice_self_penalty",
+    "duration": 0
+  },
+  {
+    "id": "has_2",
+    "title": "كارت السويتش",
+    "text": "اختار واحد من القعدة تبدل معاه النقط السلبية بتاعتك كلها.",
+    "points": 10,
+    "effectType": "swap_scores",
+    "duration": 0,
+    "needsTarget": true
+  },
+  {
+    "id": "has_3",
+    "title": "كارت العدوى",
+    "text": "الكارت ده بيلزق فيك.. أي نقطة سلبية هتاخدها طول اللعبة، الشخص اللي على شمالك هياخد نقطة زيها بالظبط.",
+    "points": 10,
+    "effectType": "copy_negative_to_left",
+    "duration": 999
+  },
+  {
+    "id": "has_4",
+    "title": "كارت قفلنا المايك",
+    "text": "ممنوع تنطق ولا كلمة لمدة 3 جولات، لو اتكلمت أو رديت على حد، تاخد الكارت وتسحب واحد تاني عقاب.",
+    "points": 10,
+    "effectType": "silence",
+    "duration": 3
+  },
+  {
+    "id": "has_5",
+    "title": "الفلوجر",
+    "text": "لمدة 3 راوندات، ممنوع تقولي أي جملة غير وإنتي ماسكة موبايلك رافعاه قدامك كأنك بتصوري \"Vlog\" وتوجهي كلامك لمتابعين وهميين.",
+    "points": 5,
+    "effectType": "vlog",
+    "duration": 3
+  },
+  {
+    "id": "has_6",
+    "title": "كارت الترجمة",
+    "text": "أي حد يتكلم في القعدة لمدة دقيقتين، لازم تترجم كلامه للغة عربية فصحى كأنك في مسلسل تاريخي.",
+    "points": 5,
+    "effectType": "translate",
+    "duration": 3
+  },
+  {
+    "id": "has_7",
+    "title": "كارت البارانويا",
+    "text": "طول الـ 3 جولات، أي حد يوجهلك كلام، لازم ترد عليه بـ \"سؤال\" ومينفعش تجاوب إجابة صريحة أبداً.",
+    "points": 5,
+    "effectType": "question_only",
+    "duration": 3
+  },
+  {
+    "id": "has_8",
+    "title": "كارت الـ Lag (التهنيج)",
+    "text": "لمدة 3 جولات، أي حد يوجهلك كلام، لازم تبصله في صمت تام وعينك مبرقة لمدة 5 ثواني بالظبط كأن دماغك بتهنج وبعدين ترد.",
+    "points": 5,
+    "effectType": "lag",
+    "duration": 3
+  },
+  {
+    "id": "has_9",
+    "title": "الهاشتاج",
+    "text": "لمدة 3 راوندات، ممنوع تتكلمي من غير ما تنهي كلامك بـ \"هاشتاج\" منطوق بصوت عالي ليه علاقة بالكلام (مثال: هاتلي ماية.. هاشتاج عطش).",
+    "points": 3,
+    "effectType": "hashtag",
+    "duration": 3
+  },
+  {
+    "id": "has_10",
+    "title": "كارت المراية",
+    "text": "لمدة 3 جولات، لازم تقلد نفس قعدة وحركات الشخص اللي على يمينك بالظبط، لو نسيت تاخد الكارت.",
+    "points": 3,
+    "effectType": "mirror",
+    "duration": 3
+  },
+  {
+    "id": "has_11",
+    "title": "كارت الوسواس",
+    "text": "قبل ما تتكلم أو ترد على أي حد، لازم تبص وراك الأول كأن في حد بيراقبك.",
+    "points": 3,
+    "effectType": "paranoia",
+    "duration": 3
+  },
+  {
+    "id": "has_12",
+    "title": "كارت التمثال",
+    "text": "لمدة 3 جولات، ممنوع تحرك إيدك وأنت بتتكلم نهائياً، إيدك الاتنين جنبك كأنك متكتف.",
+    "points": 3,
+    "effectType": "statue",
+    "duration": 3
+  }
+];
+
+const POINT_PLAN = [3, 5, 10, 10];
+
+// ===================== 4) State helpers =====================
+const app = document.getElementById('app');
+const ROOMS = 'qaada_scroll_rooms';
+let unsubscribe = null;
+let room = null;
+let screen = 'home';
+let errorMsg = '';
+let lastRenderKey = '';
+let heartbeatTimer = null;
+
+let currentPlayerId = localStorage.getItem('qaada_player_id');
+if(!currentPlayerId){
+  currentPlayerId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+  localStorage.setItem('qaada_player_id', currentPlayerId);
+}
+
+function safeText(v){ return String(v ?? '').replace(/[&<>"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
+function codeGen(){ const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c=''; for(let i=0;i<6;i++) c+=chars[Math.floor(Math.random()*chars.length)]; return c; }
+function shuffle(a){ const x=[...a]; for(let i=x.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [x[i],x[j]]=[x[j],x[i]]; } return x; }
+function getChar(id){ return CHARACTERS.find(c=>c.id===id); }
+function isHost(){ return room && room.hostId === currentPlayerId; }
+function me(){ return room?.players?.find(p=>p.id===currentPlayerId); }
+function currentPlayer(){ return room?.players?.[room.currentTurnIndex || 0]; }
+function currentPicker(){ return room?.players?.[room.characterPickIndex || 0]; }
+function playerById(id){ return (room?.players||[]).find(p=>p.id===id); }
+function scoreClass(n){ return n >= 0 ? 'zero' : 'neg'; }
+function roundTypeLabel(t){ return t === 'situation' ? 'موقف' : t === 'action' ? 'أكشن' : t === 'hasib' ? 'حاسب' : t === 'punishment' ? 'عقاب' : 'كارت'; }
+function normalDeckKey(roundType){ return roundType === 'situation' ? 'situationDeck' : 'actionDeck'; }
+function cardBackStyle(){ return `background-image:url('${CARD_BACK_IMAGE}')`; }
+function cardFaceStyle(){ return `background-image:url('${CARD_FACE_IMAGE}')`; }
+function characterBackStyle(){ return `background-image:url('${CHARACTER_CARD_BACK_IMAGE}')`; }
+function characterFaceStyle(){ return `background-image:url('${CHARACTER_CARD_FACE_IMAGE}')`; }
+function bgStyle(img){ return `background-image:url('${img}')`; }
+function isOnline(p){ return p?.isOnline !== false && (!p.lastSeen || Date.now() - p.lastSeen < 60000); }
+function leftOf(players, idx){ return players[(idx - 1 + players.length) % players.length]; }
+function punishmentCount(players){ return Math.max(1, Math.round((players||[]).length / 3)); }
+function lowestPlayers(players){ const count = punishmentCount(players||[]); return [...(players||[])].sort((a,b)=>(a.score||0)-(b.score||0)).slice(0, count); }
+function makePlayerPlans(players){ const plans = {}; (players||[]).forEach(p=>{ plans[p.id] = shuffle(POINT_PLAN); }); return plans; }
+function plannedPointsFor(r, playerId, roundIndex){ return (r.playerPointPlans && r.playerPointPlans[playerId] && r.playerPointPlans[playerId][roundIndex]) || shuffle(POINT_PLAN)[roundIndex % 4]; }
+function showGameMode(on){
+  document.body.classList.toggle('game-mode', !!on);
+  app.classList.toggle('game-mode', !!on);
+}
+function showHomeMode(on){
+  document.body.classList.toggle('home-mode', !!on);
+  app.classList.toggle('home-mode', !!on);
+}
+function setError(msg){ errorMsg = msg || ''; render(); }
+function setScreen(next){
+  screen = next;
+  errorMsg = '';
+  app.scrollTop = 0;
+  render();
+}
+
+function roomUiKey(r){
+  if(!r) return '';
+  const copy = {
+    ...r,
+    updatedAt:null,
+    createdAt:null,
+    players:(r.players||[]).map(p=>({...p,lastSeen:null,joinedAt:null}))
+  };
+  return JSON.stringify(copy);
+}
+
+function friendlyError(e){
+  const msg = String(e?.message || e || '');
+  if(msg.includes('permission-denied') || msg.includes('Missing or insufficient permissions')) return 'Firebase رافض الحفظ بسبب Rules. افتحي Firestore Rules وخليها تسمح بالقراءة والكتابة للرومات قبل التسليم.';
+  if(msg.includes('unavailable') || msg.includes('network') || msg.includes('Failed to fetch')) return 'في مشكلة اتصال بالإنترنت أو Firebase. افتحي اللعبة من Chrome مع إنترنت ثابت أو ارفعيها على Hosting.';
+  if(msg.includes('Firebase SDK')) return msg;
+  return msg || 'حصل خطأ غير متوقع. افتحي Console لو محتاجة تفاصيل أكتر.';
+}
+function requireFirebase(){
+  if(!FIREBASE_READY){ setError('لازم Firebase config يكون موجود عشان الرومات تشتغل Online.'); return false; }
+  if(!FIREBASE_SDK_LOADED || !db){ setError('Firebase SDK مش متحمل. افتحي الملف من Chrome مع إنترنت أو ارفعيه على Hosting.'); return false; }
+  return true;
+}
+async function updateRoom(patch){
+  if(!room?.roomCode) return false;
+  if(!requireFirebase()) return false;
+  try{
+    await db.collection(ROOMS).doc(room.roomCode).update({...patch, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+    return true;
+  }catch(e){
+    console.error('Room update failed:', e);
+    setError(friendlyError(e));
+    return false;
+  }
+}
+function listen(code){
+  if(unsubscribe) unsubscribe();
+  unsubscribe = db.collection(ROOMS).doc(code).onSnapshot(snap=>{
+    const nextRoom = snap.exists ? snap.data() : null;
+    if(!nextRoom){
+      room = null;
+      screen = 'home';
+      lastRenderKey = '';
+      localStorage.removeItem('qaada_room_code');
+      render();
+      return;
+    }
+    const key = roomUiKey(nextRoom);
+    room = nextRoom;
+    if(key === lastRenderKey) return;
+    lastRenderKey = key;
+    render();
+  }, err=>{
+    console.error('Snapshot error:', err);
+    setError(friendlyError(err));
+  });
+}
+function copyRoomCode(code){
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+  };
+  if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(code).catch(fallback); }
+  else fallback();
+}
+
+// ===================== 5) Room actions =====================
+async function createRoomAction(btn){
+  if(!requireFirebase()) return;
+  const name = document.getElementById('hostName')?.value.trim();
+  const maxPlayers = Number(document.getElementById('maxPlayers')?.value);
+  if(!name) return setError('الاسم مطلوب');
+  if(maxPlayers < 2 || maxPlayers > 12) return setError('عدد اللاعبين من 2 لـ 12');
+
+  setLoading(btn, true, 'جاري إنشاء الروم...');
+  try{
+    const code = codeGen();
+    const ref = db.collection(ROOMS).doc(code);
+    const host = {id:currentPlayerId,name,isHost:true,characterId:null,score:0,failedCards:0,joinedAt:Date.now(),isOnline:true,lastSeen:Date.now(),leftDuringGame:false};
+    const data = {
+      schemaVersion:9,
+      roomCode:code,
+      hostId:currentPlayerId,
+      maxPlayers,
+      players:[host],
+      phase:'lobby',
+      createdAt:Date.now(),
+      updatedAt:Date.now(),
+      characterDeck:shuffle(CHARACTERS),
+      chosenCharacterIds:[],
+      characterPickIndex:0,
+      revealCharacter:null,
+      currentRound:0,
+      totalRounds:4,
+      roundTypes:['situation','situation','action','action'],
+      currentTurnIndex:0,
+      roundTurnCount:0,
+      currentCard:null,
+      pendingNormalAfterHasib:false,
+      drawnCards:[],
+      activeEffects:[],
+      lastResult:null,
+      playerPointPlans:{},
+      situationDeck: shuffle(SITUATION_CARDS).map(c=>({...c,type:'situation',used:false})),
+      actionDeck: shuffle(ACTION_CARDS).map(c=>({...c,type:'action',used:false})),
+      hasibDeck: shuffle(HASIB_CARDS).map(c=>({...c,type:'hasib',used:false}))
+    };
+    await ref.set(data);
+    localStorage.setItem('qaada_room_code', code);
+    listen(code);
+    startHeartbeat();
+  }catch(e){
+    console.error('Create room failed:', e);
+    setError(friendlyError(e));
+  }finally{
+    setLoading(btn, false);
+  }
+}
+async function joinRoomAction(btn){
+  if(!requireFirebase()) return;
+  const name = document.getElementById('joinName')?.value.trim();
+  const code = document.getElementById('joinCode')?.value.trim().toUpperCase();
+  if(!name) return setError('الاسم مطلوب');
+  if(!code) return setError('الكود مطلوب');
+
+  setLoading(btn, true, 'جاري الدخول...');
+  const ref = db.collection(ROOMS).doc(code);
+  try{
+    await db.runTransaction(async tx=>{
+      const snap = await tx.get(ref);
+      if(!snap.exists) throw new Error('الروم غير موجودة');
+      const r = snap.data();
+      const players = r.players || [];
+      const existingIdx = players.findIndex(p=>p.id===currentPlayerId);
+      if(existingIdx >= 0){
+        const old = players[existingIdx];
+        let newScore = old.score || 0;
+        if(r.phase !== 'lobby' && old.isOnline === false && newScore > 0){ newScore = -Math.abs(newScore); }
+        players[existingIdx] = {...old, name, score:newScore, isOnline:true, lastSeen:Date.now(), leftDuringGame:false, rejoinPenaltyApplied: newScore < (old.score||0)};
+      }else{
+        if(r.phase !== 'lobby') throw new Error('اللعبة بدأت بالفعل');
+        if(players.length >= r.maxPlayers) throw new Error('الروم اكتملت');
+        players.push({id:currentPlayerId,name,isHost:false,characterId:null,score:0,failedCards:0,joinedAt:Date.now(),isOnline:true,lastSeen:Date.now(),leftDuringGame:false});
+      }
+      tx.update(ref,{players,updatedAt:Date.now()});
+    });
+    localStorage.setItem('qaada_room_code',code);
+    listen(code);
+    startHeartbeat();
+  }catch(e){
+    console.error('Join room failed:', e);
+    setError(friendlyError(e));
+  }finally{
+    setLoading(btn, false);
+  }
+}
+async function leaveRoom(){
+  const localCode = room?.roomCode;
+  if(!localCode){
+    localStorage.removeItem('qaada_room_code');
+    room=null;
+    setScreen('home');
+    return;
+  }
+  const ref = db.collection(ROOMS).doc(localCode);
+  try{
+    await db.runTransaction(async tx=>{
+      const snap = await tx.get(ref);
+      if(!snap.exists) return;
+      const r = snap.data();
+      let players = r.players || [];
+      const gameStarted = r.phase && !['lobby','ended'].includes(r.phase);
+      if(gameStarted){
+        players = players.map(p=>{
+          if(p.id !== currentPlayerId) return p;
+          const currentScore = p.score || 0;
+          return {...p, isOnline:false, lastSeen:Date.now(), leftDuringGame:true, score: currentScore > 0 ? -Math.abs(currentScore) : currentScore};
+        });
+        tx.update(ref,{players,updatedAt:Date.now()});
+        return;
+      }
+      players = players.filter(p=>p.id!==currentPlayerId);
+      if(players.length === 0){ tx.delete(ref); return; }
+      let hostId = r.hostId;
+      if(hostId === currentPlayerId){
+        hostId = players[0].id;
+        players = players.map((p,i)=>({...p,isHost:i===0}));
+      }
+      tx.update(ref,{players,hostId,updatedAt:Date.now()});
+    });
+  }catch(e){
+    console.warn('Leave room warning:', e);
+  }
+  if(unsubscribe) unsubscribe();
+  if(heartbeatTimer) clearInterval(heartbeatTimer);
+  unsubscribe=null;
+  heartbeatTimer=null;
+  room=null;
+  lastRenderKey='';
+  localStorage.removeItem('qaada_room_code');
+  setScreen('home');
+}
+function forceHome(){
+  if(unsubscribe) unsubscribe();
+  if(heartbeatTimer) clearInterval(heartbeatTimer);
+  unsubscribe=null; heartbeatTimer=null; room=null; lastRenderKey='';
+  localStorage.removeItem('qaada_room_code');
+  setScreen('home');
+}
+function startHeartbeat(){
+  if(heartbeatTimer) clearInterval(heartbeatTimer);
+  heartbeatTimer = setInterval(async()=>{
+    if(!room?.roomCode || !db) return;
+    try{
+      const ref = db.collection(ROOMS).doc(room.roomCode);
+      await db.runTransaction(async tx=>{
+        const snap = await tx.get(ref);
+        if(!snap.exists) return;
+        const r = snap.data();
+        const players = (r.players||[]).map(p=>p.id===currentPlayerId?{...p,isOnline:true,lastSeen:Date.now()}:p);
+        tx.update(ref,{players,updatedAt:Date.now()});
+      });
+    }catch(e){}
+  }, 30000);
+}
+window.addEventListener('beforeunload',()=>{ try{ localStorage.setItem('qaada_last_exit', String(Date.now())); }catch(e){} });
+
+function setLoading(btn, loading, text){
+  if(!btn) return;
+  if(loading){
+    btn.dataset.oldText = btn.innerText;
+    btn.innerText = text || 'جاري...';
+    btn.disabled = true;
+  }else{
+    btn.innerText = btn.dataset.oldText || btn.innerText;
+    btn.disabled = false;
+  }
+}
+
+async function startGame(){
+  if(!isHost()) return;
+  if((room.players||[]).length < 2) return setError('استنى باقي اللاعبين');
+  await updateRoom({
+    phase:'intro_character',
+    characterPickIndex:0,
+    chosenCharacterIds:[],
+    revealCharacter:null,
+    playerPointPlans: makePlayerPlans(room.players||[])
+  });
+}
+async function beginCharacterSelection(){ if(!isHost()) return; await updateRoom({phase:'character_selection'}); }
+async function beginSituations(){ if(!isHost()) return; await updateRoom({phase:'playing',currentRound:0,currentTurnIndex:0,roundTurnCount:0,currentCard:null,pendingNormalAfterHasib:false,lastResult:null}); }
+async function beginActions(){ if(!isHost()) return; await updateRoom({phase:'playing',currentRound:2,currentTurnIndex:0,roundTurnCount:0,currentCard:null,pendingNormalAfterHasib:false,lastResult:null}); }
+async function beginPunishment(){
+  if(!isHost()) return;
+  const punished = lowestPlayers(room.players||[]);
+  const hardCards = shuffle(ACTION_CARDS.filter(c=>c.points===10)).slice(0, punished.length).map((c,i)=>({...c,type:'punishment',punishmentIndex:i,points:10}));
+  await updateRoom({phase:'punishment',punishmentPlayers:punished.map(p=>p.id),punishmentIndex:0,punishmentCards:hardCards,currentCard:null,lastResult:null});
+}
+
+// ===================== 6) Character selection =====================
+async function pickCharacter(index){
+  if(!room) return;
+  const picker = currentPicker();
+  if(!picker || picker.id !== currentPlayerId) return setError('مش دورك دلوقتي');
+  const ref = db.collection(ROOMS).doc(room.roomCode);
+  try{
+    await db.runTransaction(async tx=>{
+      const snap = await tx.get(ref);
+      const r = snap.data();
+      const players = r.players || [];
+      const pickerNow = players[r.characterPickIndex || 0];
+      if(!pickerNow || pickerNow.id !== currentPlayerId) throw new Error('مش دورك دلوقتي');
+      const selected = r.characterDeck[index];
+      if(!selected || (r.chosenCharacterIds||[]).includes(selected.id)) throw new Error('الشخصية اتاخدت');
+      const updatedPlayers = players.map(p=>p.id===currentPlayerId ? {...p,characterId:selected.id} : p);
+      const chosenCharacterIds = [...(r.chosenCharacterIds||[]), selected.id];
+      const allChosen = updatedPlayers.every(p=>p.characterId);
+      tx.update(ref,{
+        players:updatedPlayers,
+        chosenCharacterIds,
+        revealCharacter:{playerId:currentPlayerId, charId:selected.id, allChosen, nextIndex:(r.characterPickIndex||0)+1},
+        phase:'character_reveal',
+        updatedAt:Date.now()
+      });
+    });
+  }catch(e){ setError(friendlyError(e)); }
+}
+async function confirmCharacter(){
+  if(!room?.revealCharacter) return;
+  const reveal = room.revealCharacter;
+  if(reveal.playerId !== currentPlayerId && !isHost()) return setError('صاحب الشخصية بس يأكد إنه عرفها');
+  if(reveal.allChosen){
+    await updateRoom({phase:'intro_situations', revealCharacter:null, characterPickIndex:room.characterPickIndex||0});
+  }else{
+    await updateRoom({phase:'character_selection', revealCharacter:null, characterPickIndex:reveal.nextIndex || ((room.characterPickIndex||0)+1)});
+  }
+}
+
+// ===================== 7) Gameplay actions =====================
+function pickFromDeckByPoints(deck, targetPoints){
+  const exactUnused = (deck||[]).filter(c=>!c.used && Number(c.points)===Number(targetPoints));
+  let picked = exactUnused[Math.floor(Math.random()*exactUnused.length)];
+  let updatedDeck = deck || [];
+  if(picked){
+    updatedDeck = updatedDeck.map(c=>c.id===picked.id ? {...c,used:true} : c);
+    return {card:picked, deck:updatedDeck};
+  }
+  const exactAny = (deck||[]).filter(c=>Number(c.points)===Number(targetPoints));
+  picked = exactAny[Math.floor(Math.random()*exactAny.length)];
+  if(picked){
+    return {card:{...picked,id:picked.id+'_reuse_'+Date.now(),reused:true}, deck:updatedDeck};
+  }
+  const anyUnused = (deck||[]).filter(c=>!c.used);
+  picked = anyUnused[Math.floor(Math.random()*anyUnused.length)] || (deck||[])[Math.floor(Math.random()*(deck||[]).length)];
+  if(!picked) throw new Error('مفيش كروت متاحة');
+  updatedDeck = updatedDeck.map(c=>c.id===picked.id ? {...c,used:true} : c);
+  return {card:picked, deck:updatedDeck};
+}
+async function drawCard(btn){
+  if(!room) return;
+  const cp = currentPlayer();
+  if(!cp || cp.id !== currentPlayerId) return setError('مش دورك دلوقتي');
+  setLoading(btn, true, 'جاري السحب...');
+  const ref = db.collection(ROOMS).doc(room.roomCode);
+  try{
+    await db.runTransaction(async tx=>{
+      const snap = await tx.get(ref);
+      const r = snap.data();
+      const players = r.players || [];
+      const idx = r.currentTurnIndex || 0;
+      const current = players[idx];
+      if(!current || current.id !== currentPlayerId) throw new Error('مش دورك دلوقتي');
+      if(r.currentCard) throw new Error('في كارت مفتوح بالفعل');
+
+      const roundType = r.roundTypes?.[r.currentRound] || 'situation';
+      const hasibAvailable = (r.hasibDeck||[]).filter(c=>!c.used);
+      const shouldHasib = !r.pendingNormalAfterHasib && hasibAvailable.length && Math.random() < 0.22;
+      let update = {};
+      let card = null;
+      let isBonusHasib = false;
+
+      if(shouldHasib){
+        card = hasibAvailable[Math.floor(Math.random()*hasibAvailable.length)];
+        isBonusHasib = true;
+        update.hasibDeck = (r.hasibDeck||[]).map(c=>c.id===card.id ? {...c,used:true} : c);
+      }else{
+        const targetPoints = plannedPointsFor(r, current.id, r.currentRound || 0);
+        const key = normalDeckKey(roundType);
+        const result = pickFromDeckByPoints(r[key] || [], targetPoints);
+        card = {...result.card, points:targetPoints};
+        update[key] = result.deck;
+        update.pendingNormalAfterHasib = false;
+      }
+
+      update.currentCard = {
+        ...card,
+        type: card.type || (isBonusHasib ? 'hasib' : roundType),
+        ownerId: current.id,
+        revealed:true,
+        isBonusHasib,
+        votes:{},
+        targetId:null,
+        createdAt:Date.now()
+      };
+      update.drawnCards = [...(r.drawnCards||[]), card.id];
+      update.lastResult = null;
+      update.updatedAt = Date.now();
+      tx.update(ref, update);
+    });
+  }catch(e){
+    setError(friendlyError(e));
+  }finally{
+    setLoading(btn, false);
+  }
+}
+function eligibleVoterIds(players, ownerId){
+  return (players||[]).filter(p=>p.id!==ownerId && p.isOnline !== false).map(p=>p.id);
+}
+function applyScore(players, playerId, delta, failInc=false){
+  return (players || []).map(p => {
+    if(p.id !== playerId) return p;
+
+    let score = p.score || 0;
+    let failedCards = p.failedCards || 0;
+
+    if(failInc){
+      failedCards += 1;
+
+      // أول مرتين فشل: اللاعب يلبس سالب الكارت عادي.
+      if(failedCards <= 2){
+        score += delta;
+      }
+      // من تالت مرة فشل: لو موجب يتصفر، ولو سالب يتضاعف بالسالب.
+      else{
+        if(score > 0) score = 0;
+        else if(score < 0) score = score * 2;
+        else score = 0;
+
+        // نبدأ العد من جديد بعد تطبيق عقوبة الفشل المتكرر.
+        failedCards = 0;
+      }
+    }else{
+      score += delta;
+    }
+
+    return {...p, score, failedCards};
+  });
+}
+function repeatFailPenaltyInfo(player, success){
+  if(success || !player) return null;
+  const nextFails = (player.failedCards || 0) + 1;
+  if(nextFails <= 2) return null;
+  const score = player.score || 0;
+  if(score > 0) return 'فشل أكتر من مرتين، فتم تصفير نقطه الموجبة.';
+  if(score < 0) return 'فشل أكتر من مرتين، فتم مضاعفة السالب عليه.';
+  return 'فشل أكتر من مرتين، ونقطه كانت صفر.';
+}
+function applyNegativeCopyEffects(r, players, playerId, delta){
+  if(delta >= 0) return players;
+  const effects = (r.activeEffects||[]).filter(e=>e.effectType==='copy_negative_to_left' && e.playerId===playerId);
+  let out = players;
+  effects.forEach(e=>{ out = applyScore(out, e.targetPlayerId, delta, false); });
+  return out;
+}
+function decrementEffectsForPlayer(effects, playerId){
+  return (effects||[]).map(e=>{
+    if(e.playerId !== playerId) return e;
+    if(e.remainingTurns >= 900) return e;
+    return {...e, remainingTurns:e.remainingTurns-1};
+  }).filter(e=>e.remainingTurns > 0);
+}
+function buildFinalizePatch(r, votes){
+  const card = r.currentCard;
+  const players = r.players || [];
+  const ownerId = card.ownerId;
+  const idx = players.findIndex(p=>p.id===ownerId);
+  const owner = players[idx];
+  const successVotes = Object.values(votes||{}).filter(v=>v==='success').length;
+  const failVotes = Object.values(votes||{}).filter(v=>v==='fail').length;
+  const success = successVotes > failVotes;
+  const delta = success ? (card.points||0) : -(card.points||0);
+  const scoreBefore = owner?.score || 0;
+  const repeatPenaltyText = repeatFailPenaltyInfo(owner, success);
+  let updatedPlayers = applyScore(players, ownerId, delta, !success);
+  updatedPlayers = applyNegativeCopyEffects(r, updatedPlayers, ownerId, delta);
+  const updatedOwner = updatedPlayers.find(p=>p.id===ownerId);
+  const actualDelta = (updatedOwner?.score || 0) - scoreBefore;
+  let activeEffects = [...(r.activeEffects||[])];
+
+  if(success && card.type === 'hasib'){
+    if(card.effectType === 'swap_scores' && card.targetId){
+      const a = updatedPlayers.findIndex(p=>p.id===ownerId);
+      const b = updatedPlayers.findIndex(p=>p.id===card.targetId);
+      if(a >= 0 && b >= 0){
+        const s = updatedPlayers[a].score || 0;
+        updatedPlayers[a] = {...updatedPlayers[a], score: updatedPlayers[b].score || 0};
+        updatedPlayers[b] = {...updatedPlayers[b], score: s};
+      }
+    }else if(card.effectType === 'copy_negative_to_left'){
+      const left = leftOf(players, idx);
+      if(left){
+        activeEffects.push({id:'eff_'+Date.now(),playerId:ownerId,targetPlayerId:left.id,title:card.title,effectType:card.effectType,remainingTurns:999,penalty:card.points,text:card.text});
+      }
+    }else if(['silence','vlog','translate','question_only','lag','hashtag','mirror','paranoia','statue'].includes(card.effectType)){
+      activeEffects.push({id:'eff_'+Date.now(),playerId:ownerId,targetPlayerId:ownerId,title:card.title,effectType:card.effectType,remainingTurns:card.duration||3,penalty:card.points,text:card.text});
+    }
+  }
+
+  const lastResult = {
+    cardTitle: card.title,
+    playerName: owner?.name || '',
+    playerId: ownerId,
+    success,
+    delta: actualDelta,
+    cardDelta: delta,
+    repeatPenaltyText,
+    successVotes,
+    failVotes
+  };
+
+  if(card.isBonusHasib){
+    return {
+      players:updatedPlayers,
+      activeEffects,
+      currentCard:null,
+      pendingNormalAfterHasib:true,
+      lastResult,
+      updatedAt:Date.now()
+    };
+  }
+
+  activeEffects = decrementEffectsForPlayer(activeEffects, ownerId);
+  const nextTurn = ((r.currentTurnIndex || 0) + 1) % players.length;
+  let nextRound = r.currentRound || 0;
+  let roundTurnCount = (r.roundTurnCount || 0) + 1;
+  let phase = 'playing';
+
+  if(roundTurnCount >= players.length){
+    nextRound += 1;
+    roundTurnCount = 0;
+    if(nextRound === 2) phase = 'intro_actions';
+    if(nextRound >= (r.totalRounds || 4)) phase = 'intro_punishment';
+  }
+
+  return {
+    players:updatedPlayers,
+    activeEffects,
+    currentCard:null,
+    pendingNormalAfterHasib:false,
+    currentTurnIndex:nextTurn,
+    currentRound:nextRound,
+    roundTurnCount,
+    phase,
+    lastResult,
+    updatedAt:Date.now()
+  };
+}
+async function voteCard(result, btn){
+  if(!room?.currentCard) return;
+  const card = room.currentCard;
+  if(card.ownerId === currentPlayerId) return setError('صاحب الدور مينفعش يصوت لنفسه');
+  if(card.votes && card.votes[currentPlayerId]) return setError('أنت صوتت خلاص');
+  if(card.needsTarget && !card.targetId) return setError('مستنيين صاحب الدور يختار اللاعب');
+  setLoading(btn, true, 'جاري التصويت...');
+  const ref = db.collection(ROOMS).doc(room.roomCode);
+  try{
+    await db.runTransaction(async tx=>{
+      const snap = await tx.get(ref);
+      const r = snap.data();
+      const c = r.currentCard;
+      if(!c) throw new Error('مفيش كارت مفتوح');
+      if(c.ownerId === currentPlayerId) throw new Error('صاحب الدور مينفعش يصوت لنفسه');
+      const expected = eligibleVoterIds(r.players||[], c.ownerId);
+      if(!expected.includes(currentPlayerId)) throw new Error('التصويت مش متاح لك دلوقتي');
+      if(c.needsTarget && !c.targetId) throw new Error('مستنيين صاحب الدور يختار اللاعب');
+      const votes = {...(c.votes||{}), [currentPlayerId]: result};
+      const votedCount = expected.filter(id=>votes[id]).length;
+      if(votedCount >= expected.length){
+        tx.update(ref, buildFinalizePatch({...r,currentCard:{...c,votes}}, votes));
+      }else{
+        tx.update(ref, {currentCard:{...c,votes}, updatedAt:Date.now()});
+      }
+    });
+  }catch(e){
+    setError(friendlyError(e));
+  }finally{
+    setLoading(btn, false);
+  }
+}
+async function chooseHasibTarget(btn){
+  if(!room?.currentCard) return;
+  const card = room.currentCard;
+  if(card.ownerId !== currentPlayerId) return;
+  const targetId = document.getElementById('targetPlayer')?.value;
+  if(!targetId) return setError('اختار لاعب الأول');
+  setLoading(btn, true, 'جاري التثبيت...');
+  try{
+    await updateRoom({currentCard:{...card,targetId}});
+  }finally{
+    setLoading(btn, false);
+  }
+}
+async function breakEffect(effectId){
+  if(!room) return;
+  if(!requireFirebase()) return;
+  const effect = (room.activeEffects||[]).find(e=>e.id===effectId);
+  if(!effect) return;
+  if(!isHost() && effect.playerId !== currentPlayerId) return setError('المضيف أو صاحب الحكم بس يقدر يسجل كسر الحكم');
+  const ref = db.collection(ROOMS).doc(room.roomCode);
+  try{
+    await db.runTransaction(async tx=>{
+      const snap = await tx.get(ref); const r = snap.data();
+      const e = (r.activeEffects||[]).find(x=>x.id===effectId); if(!e) return;
+      const players = applyScore(r.players||[], e.playerId, -(e.penalty||3), true);
+      const activeEffects = (r.activeEffects||[]).filter(x=>x.id!==effectId);
+      tx.update(ref,{players,activeEffects,updatedAt:Date.now()});
+    });
+  }catch(e){
+    setError(friendlyError(e));
+  }
+}
+async function completePunishment(btn){
+  if(!room) return;
+  const ids = room.punishmentPlayers || [];
+  const idx = room.punishmentIndex || 0;
+  const currentLoserId = ids[idx];
+  if(currentPlayerId !== currentLoserId && !isHost()) return setError('العقاب يتسجل من اللاعب أو المضيف');
+  setLoading(btn, true, 'جاري...');
+  try{
+    if(idx + 1 >= ids.length){ await updateRoom({phase:'ended',updatedAt:Date.now()}); }
+    else { await updateRoom({punishmentIndex:idx+1,updatedAt:Date.now()}); }
+  }finally{
+    setLoading(btn, false);
+  }
+}
+async function resetGame(){
+  if(!isHost()) return;
+  const players = (room.players||[]).map(p=>({...p,characterId:null,score:0,failedCards:0,isOnline:p.id===currentPlayerId ? true : p.isOnline,lastSeen:p.id===currentPlayerId ? Date.now() : p.lastSeen,leftDuringGame:false,rejoinPenaltyApplied:false}));
+  await updateRoom({
+    phase:'lobby',
+    players,
+    currentRound:0,
+    currentTurnIndex:0,
+    roundTurnCount:0,
+    currentCard:null,
+    activeEffects:[],
+    chosenCharacterIds:[],
+    characterPickIndex:0,
+    revealCharacter:null,
+    punishmentPlayers:[],
+    punishmentIndex:0,
+    punishmentCards:[],
+    pendingNormalAfterHasib:false,
+    lastResult:null,
+    playerPointPlans:{},
+    situationDeck: shuffle(SITUATION_CARDS).map(c=>({...c,type:'situation',used:false})),
+    actionDeck: shuffle(ACTION_CARDS).map(c=>({...c,type:'action',used:false})),
+    hasibDeck: shuffle(HASIB_CARDS).map(c=>({...c,type:'hasib',used:false}))
+  });
+}
+
+// ===================== 8) Render =====================
+function render(){
+  showHomeMode(false);
+  showGameMode(false);
+
+  if(!FIREBASE_READY){
+    app.innerHTML = `<div class="screen center"><div class="logo-mark">ق</div><h1 class="brand">قعدة سكرول</h1><div class="notice bad text-right">لازم Firebase config يكون موجود عشان إنشاء الرومات واللعب Online يشتغل.</div></div>`;
+    return;
+  }
+
+  if(room){
+    const gamePhase = !['lobby'].includes(room.phase);
+    showGameMode(gamePhase);
+    if(room.phase==='lobby') return renderLobby();
+    if(room.phase==='intro_character') return renderIntro('character');
+    if(room.phase==='character_selection') return renderCharacterSelection();
+    if(room.phase==='character_reveal') return renderCharacterReveal();
+    if(room.phase==='intro_situations') return renderIntro('situations');
+    if(room.phase==='intro_actions') return renderIntro('actions');
+    if(room.phase==='playing') return renderGameplay();
+    if(room.phase==='intro_punishment') return renderIntro('punishment');
+    if(room.phase==='punishment') return renderPunishment();
+    if(room.phase==='ended') return renderEnd();
+  }
+
+  if(screen==='create') return renderCreate();
+  if(screen==='join') return renderJoin();
+  return renderHome();
+}
+function errorHtml(){ return errorMsg ? `<div class="notice bad">${safeText(errorMsg)}</div>` : ''; }
+function exitButtons(){
+  return `<div class="top-left"><button class="btn btn-ghost" onclick="leaveRoom()">خروج</button><button class="btn btn-ghost" onclick="forceHome()">رئيسية</button></div>`;
+}
+function renderHome(){
+  showHomeMode(true);
+  app.innerHTML = `<div class="home-page" style="${bgStyle(HOME_BG_IMAGE)}; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; position:relative; overflow:hidden;">
+    <div style="position:relative; z-index:3; text-align:center; color:#fff; max-width:420px; width:100%;">
+      <img src="${LOGO_IMAGE}" style="width:min(360px,74vw); max-height:300px; object-fit:contain; filter:drop-shadow(0 20px 34px rgba(0,0,0,.45)); margin:0 auto;" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+      <div class="logo-mark" style="display:none;margin:0 auto;">ق</div>
+      <h2 style="color:#fff;text-shadow:0 8px 22px rgba(0,0,0,.20);font-size:28px;font-weight:900">جاهزة للقعدة؟</h2>
+      <p class="tiny" style="color:rgba(255,255,255,.86);">اعملي روم أو ادخلي بكود صحابك</p>
+      ${errorHtml()}
+      <div class="space-y-3" style="margin-top:16px;">
+        <button class="btn btn-primary" style="background:#fff;color:var(--brand);" onclick="setScreen('create')">إنشاء روم</button>
+        <button class="btn btn-secondary" style="background:rgba(255,255,255,.10);color:#fff;border:2px solid rgba(255,255,255,.88);backdrop-filter:blur(8px);" onclick="setScreen('join')">دخول روم</button>
+      </div>
+      <p class="tiny text-center mt-3" style="color:rgba(255,255,255,.86);">من 2 لـ 12 لاعب • 4 راوندات • تصويت بالأغلبية</p>
+    </div>
+  </div>`;
+}
+function renderCreate(){
+  app.innerHTML = `<div class="screen"><div class="topbar"><button class="btn btn-ghost" onclick="setScreen('home')">← رجوع</button><span class="pill">إنشاء روم</span></div><div class="box space-y-4">${errorHtml()}<label><b>اسمك</b></label><input id="hostName" class="input" placeholder="اكتبي اسمك"><label><b>عدد اللاعبين</b></label><input id="maxPlayers" class="input" type="number" min="2" max="12" value="6"><button class="btn btn-primary" onclick="createRoomAction(this)">إنشاء الروم</button></div></div>`;
+}
+function renderJoin(){
+  app.innerHTML = `<div class="screen"><div class="topbar"><button class="btn btn-ghost" onclick="setScreen('home')">← رجوع</button><span class="pill">دخول روم</span></div><div class="box space-y-4">${errorHtml()}<label><b>اسمك</b></label><input id="joinName" class="input" placeholder="اكتبي اسمك"><label><b>كود الروم</b></label><input id="joinCode" class="input" placeholder="ABC123" style="direction:ltr;text-align:center;text-transform:uppercase"><button class="btn btn-primary" onclick="joinRoomAction(this)">دخول</button></div></div>`;
+}
+function renderLobby(){
+  const players = room.players || [];
+  app.innerHTML = `<div class="screen"><div class="topbar"><span class="pill">Lobby</span><button class="btn btn-ghost" onclick="leaveRoom()">خروج</button></div><div class="space-y-4">
+    <div class="room-code">${safeText(room.roomCode)}</div>
+    <button class="btn btn-secondary" onclick="copyRoomCode('${room.roomCode}')">نسخ الكود</button>
+    <div class="box"><div style="display:flex;justify-content:space-between;margin-bottom:12px"><b>اللاعبين</b><span>${players.length}/${room.maxPlayers}</span></div><div class="list">${players.map((p,i)=>playerRow(p,i,false)).join('')}</div></div>
+    ${errorHtml()}
+    ${isHost()?`<button class="btn btn-success" ${players.length<2?'disabled':''} onclick="startGame()">بدء اللعبة</button>`:`<div class="notice ok">في انتظار المضيف يبدأ اللعبة</div>`}
+  </div></div>`;
+}
+function playerRow(p, i, current){
+  const c = getChar(p.characterId);
+  return `<div class="row ${current?'current':''} ${isOnline(p)?'':'offline-row'}">
+    <div><b>${safeText(p.name)}</b><span class="status-dot ${isOnline(p)?'':'off'}"></span>
+      ${p.isHost?'<span class="tag host">مضيف</span>':''}
+      ${p.id===currentPlayerId?'<span class="tag me">أنت</span>':''}
+      ${p.rejoinPenaltyApplied?'<span class="tag danger">عقاب خروج</span>':''}
+      ${c?`<span class="tiny"> • ${safeText(c.name)}</span>`:''}
+    </div>
+    <span class="tiny">${isOnline(p)?'Online':'Offline'} • #${i+1}</span>
+  </div>`;
+}
+function renderCharacterSelection(){
+  const players = room.players || [];
+  const picker = currentPicker();
+  app.innerHTML = `<div class="screen game-bg"><div class="topbar"><span class="pill">اختيار الشخصيات</span>${exitButtons()}</div>${errorHtml()}
+    <div class="box glass mb-4"><div class="list">${players.map((p,i)=>{const c=getChar(p.characterId);return `<div class="row" ${picker?.id===p.id?'style="border-color:#f59e0b"':''}><div><b>${safeText(p.name)}</b> ${p.id===currentPlayerId?'<span class="tag me">أنت</span>':''}</div><span class="tag ${c?'ok':'warn'}">${c?safeText(c.name):(picker?.id===p.id?'دوره':'لسه')}</span></div>`}).join('')}</div></div>
+    <p class="sub text-center mb-3">${picker?.id===currentPlayerId?'دورك تختار كارت شخصية':'في انتظار '+safeText(picker?.name||'لاعب')+' يختار'}</p>
+    <div class="grid-cards">${(room.characterDeck||[]).map((c,i)=>{const chosen=(room.chosenCharacterIds||[]).includes(c.id); const can=!chosen && picker?.id===currentPlayerId; return `<div class="char-card ${chosen?'chosen':can?'back-card':'locked back-card'}" style="${chosen?characterFaceStyle():characterBackStyle()}" onclick="${can?`pickCharacter(${i})`:''}">${chosen?`<div class="char-content"><div class="char-emoji">${c.emoji}</div><div class="char-name">${safeText(c.name)}</div></div>`:''}</div>`}).join('')}</div>
+  </div>`;
+}
+function renderCharacterReveal(){
+  const reveal = room.revealCharacter || {};
+  const p = playerById(reveal.playerId);
+  const c = getChar(reveal.charId);
+  const mine = reveal.playerId === currentPlayerId;
+  app.innerHTML = `<div class="screen game-bg"><div class="topbar"><span class="pill">الشخصية طلعت</span>${exitButtons()}</div>${errorHtml()}
+    <div class="center" style="min-height:calc(100vh - 80px)">
+      <p class="sub">${mine?'شخصيتك هي':'شخصية '+safeText(p?.name||'اللاعب')+' هي'}</p>
+      <div class="big-character-card" style="${characterFaceStyle()}">
+        <div class="char-emoji" style="font-size:58px">${c?.emoji||'🎭'}</div>
+        <h2 style="font-size:28px;font-weight:900">${safeText(c?.name||'شخصية')}</h2>
+        <p class="sub" style="font-weight:800">${safeText(c?.desc||'')}</p>
+      </div>
+      ${(mine||isHost())?`<button class="btn btn-primary" onclick="confirmCharacter()">تمام عرفت شخصيتي</button>`:`<div class="notice ok">مستنيين اللاعب يأكد إنه عرف شخصيته</div>`}
+    </div>
+  </div>`;
+}
+function renderEffects(){
+  const effects = room.activeEffects || [];
+  if(!effects.length) return '';
+  return `<div class="effects">${effects.map(e=>{const p=(room.players||[]).find(x=>x.id===e.playerId);return `<div class="effect"><b>${safeText(p?.name||'لاعب')}</b>: ${safeText(e.title)} <span class="tag warn">${e.remainingTurns>=900?'طول اللعبة':e.remainingTurns+' أدوار'}</span><div class="tiny mt-1">${safeText(e.text||'')}</div>${(isHost()||e.playerId===currentPlayerId)?`<button class="btn btn-danger mt-2" style="padding:8px;font-size:13px" onclick="breakEffect('${e.id}')">تسجيل كسر الحكم</button>`:''}</div>`}).join('')}</div>`;
+}
+function renderLastResult(){
+  const r = room.lastResult;
+  if(!r) return '';
+  return `<div class="notice ${r.success?'ok':'bad'} mb-4 text-center">
+    ${safeText(r.playerName)} ${r.success?'نجح بالأغلبية':'فشل بالتصويت'} • ${r.delta>0?'+':''}${r.delta} نقط
+    ${r.repeatPenaltyText?`<div class="tiny"><b>${safeText(r.repeatPenaltyText)}</b></div>`:''}
+    <div class="tiny">نجح: ${r.successVotes} / فشل: ${r.failVotes}</div>
+  </div>`;
+}
+function renderGameplay(){
+  const players = room.players || [];
+  const cp = currentPlayer();
+  const roundType = room.roundTypes?.[room.currentRound] || 'situation';
+  const card = room.currentCard;
+  const myTurn = cp?.id === currentPlayerId;
+  const planned = cp ? plannedPointsFor(room, cp.id, room.currentRound||0) : '';
+  app.innerHTML = `<div class="screen game-bg"><div class="topbar"><div><span class="pill">راوند ${(room.currentRound||0)+1}/4 • ${roundTypeLabel(roundType)}</span><span class="pill">المطلوب ${planned} نقط</span></div>${exitButtons()}</div>
+    ${errorHtml()}${renderEffects()}${renderLastResult()}
+    <div class="box glass mb-4"><div class="scoreboard">${players.map((p,i)=>`<div class="score-row ${p.id===cp?.id?'current':''} ${isOnline(p)?'':'offline-row'}"><div><b>${safeText(p.name)}</b><span class="status-dot ${isOnline(p)?'':'off'}"></span> <span class="tiny">${safeText(getChar(p.characterId)?.name||'')}</span></div><div class="score ${scoreClass(p.score||0)}">${p.score||0}</div></div>`).join('')}</div></div>
+    <div class="game-card-wrap mb-4"><div class="game-card ${card?'flipped':''}">
+      <div class="face back" style="${cardBackStyle()}"></div>
+      <div class="face front" style="${cardFaceStyle()}">${card?cardFront(card):''}</div>
+    </div></div>
+    ${cardControls(card,myTurn)}
+  </div>`;
+}
+function cardFront(card){
+  return `<div class="card-face-content">
+    <div><div class="card-type">${roundTypeLabel(card.type)} ${card.isBonusHasib?'<span class="tag warn">مفاجأة</span>':''}</div><h3 class="card-title">${safeText(card.title||'كارت')}</h3></div>
+    <p class="card-text">${safeText(card.text)}</p>
+    <div class="points ${card.type==='hasib'?'blue':card.type==='punishment'?'dark':''}">${card.points||0} نقط</div>
+  </div>`;
+}
+function voteStatusHtml(card){
+  const ownerId = card.ownerId;
+  const expected = eligibleVoterIds(room.players||[], ownerId);
+  const votes = card.votes || {};
+  const successVotes = expected.filter(id=>votes[id]==='success').length;
+  const failVotes = expected.filter(id=>votes[id]==='fail').length;
+  const votedCount = expected.filter(id=>votes[id]).length;
+  return `<div class="vote-line">
+    <span class="vote-chip">التصويت ${votedCount}/${expected.length}</span>
+    <span class="vote-chip">نجح: ${successVotes}</span>
+    <span class="vote-chip">فشل: ${failVotes}</span>
+  </div>`;
+}
+function cardControls(card,myTurn){
+  if(!card){
+    return `<div class="footer-actions"><button class="btn btn-primary" ${myTurn?'':'disabled'} onclick="drawCard(this)">${myTurn?'اسحب كارت':'مش دورك دلوقتي'}</button>${room.pendingNormalAfterHasib?'<p class="tiny text-center mt-2">بعد كارت حاسب، اسحب كارت الراوند الأساسي.</p>':''}</div>`;
+  }
+
+  const owner = playerById(card.ownerId);
+  const alreadyVoted = card.votes && card.votes[currentPlayerId];
+  const targetName = card.targetId ? playerById(card.targetId)?.name : '';
+  const needsTarget = card.needsTarget && !card.targetId;
+
+  if(myTurn){
+    let target = '';
+    if(card.needsTarget){
+      target = card.targetId
+        ? `<div class="notice ok text-center mb-3">اختارت تبدل مع: <b>${safeText(targetName)}</b></div>`
+        : `<select id="targetPlayer" class="select mb-3"><option value="">اختار لاعب للتبديل</option>${(room.players||[]).filter(p=>p.id!==currentPlayerId).map(p=>`<option value="${p.id}">${safeText(p.name)}</option>`).join('')}</select><button class="btn btn-secondary mb-3" onclick="chooseHasibTarget(this)">تأكيد الاختيار</button>`;
+    }
+    return `<div class="footer-actions">${target}${voteStatusHtml(card)}<div class="notice ok text-center">مستنيين باقي اللعيبة يصوتوا على ${safeText(owner?.name||'اللاعب')}</div></div>`;
+  }
+
+  if(needsTarget){
+    return `<div class="footer-actions">${voteStatusHtml(card)}<div class="notice text-center">مستنيين صاحب الدور يختار اللاعب الأول</div></div>`;
+  }
+
+  if(alreadyVoted){
+    return `<div class="footer-actions">${voteStatusHtml(card)}<div class="notice ok text-center">صوتك اتحسب: ${alreadyVoted==='success'?'نجح':'فشل'}</div></div>`;
+  }
+
+  return `<div class="footer-actions">${voteStatusHtml(card)}<p class="tiny text-center mb-2">صوتوا: هل ${safeText(owner?.name||'اللاعب')} نفذ الكارت/الموقف؟</p><div class="two"><button class="btn btn-success" onclick="voteCard('success', this)">نجح</button><button class="btn btn-danger" onclick="voteCard('fail', this)">فشل</button></div></div>`;
+}
+function renderIntro(kind){
+  const data = {
+    character:{title:'اختيار الشخصيات',text:'كل لاعب هيختار كارت شخصية بالدور. بعد الاختيار هيظهرله وش الشخصية ويضغط تأكيد عشان الدور يروح للي بعده.' ,btn:'ابدأ اختيار الشخصيات',fn:'beginCharacterSelection()'},
+    situations:{title:'راوندات المواقف',text:'هنلعب راوندين مواقف. اللاعب يرد بشخصيته، وباقي اللعيبة يصوتوا نجح أو فشل. النقط تتحسب بالأغلبية.' ,btn:'ابدأ المواقف',fn:'beginSituations()'},
+    actions:{title:'راوندات الأكشن',text:'هنلعب راوندين أكشن. كل لاعب على مدار الأربع راوندات هيجيله 3 و5 و10 و10 بشكل عشوائي، وباقي اللعيبة يصوتوا على التنفيذ.',btn:'ابدأ الأكشن',fn:'beginActions()'},
+    punishment:{title:'العقاب',text:'الأربع راوندات خلصوا. العقاب هيتطبق على أقل تلت اللعيبة تقريبًا حسب عدد اللاعبين، وكل واحد منهم ياخد كارت عقاب.',btn:'ابدأ العقاب',fn:'beginPunishment()'}
+  }[kind];
+  app.innerHTML = `<div class="screen game-bg"><div class="topbar"><span class="pill">${data.title}</span>${exitButtons()}</div><div class="phase-overlay"><div class="phase-card"><h2>${data.title}</h2><p>${data.text}</p>${isHost()?`<button class="btn" onclick="${data.fn}">${data.btn}</button>`:`<p class="mt-4">في انتظار المضيف يبدأ المرحلة...</p>`}</div></div></div>`;
+}
+function renderPunishment(){
+  const ids = room.punishmentPlayers || [];
+  const idx = room.punishmentIndex || 0;
+  const player = (room.players||[]).find(p=>p.id===ids[idx]);
+  const card = (room.punishmentCards||[])[idx] || ACTION_CARDS.find(c=>c.points===10) || ACTION_CARDS[0];
+  const punishedList = ids.map(id=>playerById(id)).filter(Boolean);
+  app.innerHTML = `<div class="screen game-bg"><div class="topbar"><span class="pill">عقاب ${idx+1}/${ids.length}</span>${exitButtons()}</div>${errorHtml()}
+    <div class="box glass mb-4"><b>العقاب يتطبق على:</b><div class="list mt-3">${punishedList.map((p,i)=>`<div class="row ${p.id===player?.id?'current':''}"><b>${i+1}- ${safeText(p.name)}</b><span class="score ${scoreClass(p.score||0)}">${p.score||0}</span></div>`).join('')}</div></div>
+    <div class="punishment-card mb-4"><h2 style="font-size:26px;font-weight:900;margin-bottom:8px">${safeText(player?.name||'لاعب')} عليه العقاب</h2><p style="color:#e5e7eb">كارت عقاب إجباري</p></div>
+    <div class="game-card-wrap mb-4"><div class="game-card flipped"><div class="face back" style="${cardBackStyle()}"></div><div class="face front" style="${cardFaceStyle()}">${cardFront({...card,type:'punishment',points:10})}</div></div></div>
+    ${(currentPlayerId===player?.id||isHost())?'<button class="btn btn-success" onclick="completePunishment(this)">تم تنفيذ العقاب</button>':'<div class="notice ok text-center">مستنيين تنفيذ العقاب</div>'}
+  </div>`;
+}
+function renderEnd(){
+  const sorted=[...(room.players||[])].sort((a,b)=>(b.score||0)-(a.score||0));
+  const winner=sorted[0];
+  const loser=sorted[sorted.length-1];
+  app.innerHTML = `<div class="screen game-bg"><div class="topbar"><span class="pill">النهاية</span>${exitButtons()}</div><div class="center">
+    <div style="font-size:64px">👑</div><h2 class="brand" style="font-size:32px;font-weight:900">اللعبة خلصت</h2>
+    <div class="box glass w-full"><p class="sub mb-2">الفائز: <b>${safeText(winner?.name||'')}</b></p><p class="tiny">أقل لاعب في النقط: ${safeText(loser?.name||'')}</p><div class="scoreboard mt-4">${sorted.map((p,i)=>`<div class="score-row ${i===0?'current':''}"><b>${i+1}- ${safeText(p.name)}</b><span class="score ${scoreClass(p.score||0)}">${p.score||0}</span></div>`).join('')}</div></div>
+    ${isHost()?'<button class="btn btn-primary" onclick="resetGame()">العبوا تاني</button>':''}<button class="btn btn-secondary" onclick="leaveRoom()">رجوع للرئيسية</button>
+  </div></div>`;
+}
+
+Object.assign(window, {
+  setScreen, copyRoomCode, createRoomAction, joinRoomAction, leaveRoom, forceHome,
+  startGame, beginCharacterSelection, beginSituations, beginActions, beginPunishment,
+  pickCharacter, confirmCharacter, drawCard, voteCard, chooseHasibTarget, breakEffect,
+  completePunishment, resetGame
+});
+
+const savedRoom = localStorage.getItem('qaada_room_code');
+if(savedRoom && FIREBASE_READY && FIREBASE_SDK_LOADED && db){
+  listen(savedRoom);
+  startHeartbeat();
+}
+render();
+</script>
+</body>
+</html>
