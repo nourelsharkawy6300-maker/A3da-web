@@ -1,3 +1,18 @@
+يا هندسة، حقك عليا، التعديل على الموبايل في كود طويل زي ده بيبقى متعب جداً وبيزغلل العين! 😅
+
+الصورة اللي أنت باعتها مبينة إنك نزلت تحت خالص في الكود، أنت دلوقتي في الجزء بتاع **كروت المواقف** (عند `sit_13` و `sit_14`)، وده معناه إنك عديت الـ `</style>` بكتير أوي. الـ `</style>` موجودة فوق خالص في أول 180 سطر تقريباً.
+
+عشان نريح دماغك من وجع القلب والتدوير على شاشة الموبايل، **أنا دمجتلك كل التعديلات (الحركات الناعمة، رسالة النسخ، واحتفال الفايز) جوه الكود بتاعك بالملي.**
+
+كل اللي عليك تعمله دلوقتي:
+
+1. اعمل **تحديد للكل (Select All)** للكود اللي عندك في الموبايل.
+2. امسحه.
+3. انسخ الكود اللي تحت ده كله، واعمله **لصق (Paste)**، واحفظ الملف.
+
+كده اللعبة بقت جاهزة بالتحديثات الجديدة من غير ما تدور على أي حاجة:
+
+```html
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -6,6 +21,7 @@
   <title>قعدة سكرول - V11 Same Folder</title>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
 
@@ -231,6 +247,36 @@
       .room-code{font-size:23px}
       .btn{font-size:15px}
       .game-card-wrap{max-width:280px}
+    }
+
+    /* حركات الدخول الناعمة للشاشات */
+    @keyframes fadeInSlide {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .screen {
+      animation: fadeInSlide 0.35s ease-out;
+    }
+
+    /* حركة الكارت لما يتسحب ويظهر */
+    @keyframes popIn {
+      0% { transform: scale(0.85); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .game-card-wrap {
+      animation: popIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* رسائل التنبيه (Toast) المنبثقة */
+    .toast-msg {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(50px);
+      background: var(--dark); color: #fff; padding: 12px 24px; border-radius: 999px;
+      font-weight: 900; font-size: 14px; opacity: 0; pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 9999; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .toast-msg.show {
+      transform: translateX(-50%) translateY(0); opacity: 1;
     }
   </style>
 </head>
@@ -1056,6 +1102,20 @@ function listen(code){
     setError(friendlyError(err));
   });
 }
+
+function showToast(msg) {
+  let toast = document.getElementById('app-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'app-toast';
+    toast.className = 'toast-msg';
+    document.body.appendChild(toast);
+  }
+  toast.innerText = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
 function copyRoomCode(code){
   const fallback = () => {
     const ta = document.createElement('textarea');
@@ -1064,10 +1124,12 @@ function copyRoomCode(code){
     ta.style.opacity = '0';
     document.body.appendChild(ta);
     ta.focus(); ta.select();
-    try{ document.execCommand('copy'); }catch(e){}
+    try{ document.execCommand('copy'); showToast('تم نسخ الكود بنجاح! 📋'); }catch(e){}
     document.body.removeChild(ta);
   };
-  if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(code).catch(fallback); }
+  if(navigator.clipboard && window.isSecureContext){ 
+    navigator.clipboard.writeText(code).then(() => showToast('تم نسخ الكود بنجاح! 📋')).catch(fallback); 
+  }
   else fallback();
 }
 
@@ -1835,6 +1897,13 @@ function renderPunishment(){
   </div>`;
 }
 function renderEnd(){
+  // تشغيل الاحتفال للفايز
+  setTimeout(() => {
+    if(typeof confetti === 'function') {
+      confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 }, colors: ['#4a4d9e', '#22c55e', '#f59e0b', '#ef4444'] });
+    }
+  }, 300);
+
   const sorted=[...(room.players||[])].sort((a,b)=>(b.score||0)-(a.score||0));
   const winner=sorted[0];
   const loser=sorted[sorted.length-1];
@@ -1861,3 +1930,5 @@ render();
 </script>
 </body>
 </html>
+
+```
